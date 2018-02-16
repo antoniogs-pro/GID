@@ -17,8 +17,8 @@
 #######################################
 #
 #Variables de entorno iniciales
-RUTA=${SICSCRIPTS=/home/sic/SIC/script_SIC}
-export FUNPROC=$SICSCRIPTS/FUNCYPROC
+RUTA=${SICSCRIPTS=/home/sic/SIC/Gestion_Identidad}
+export FUNPROC=$SICSCRIPTS/bin
 
 #Variables de entorno generales
 if [ -f  $FUNPROC/entorno.sh ]; then . $FUNPROC/entorno.sh; fi
@@ -88,10 +88,8 @@ cat -n $SALIDA | grep "E+" | wc -l
 echo  C- Caracteres extraños no controlados
 cat -n $SALIDA | grep ["þ""©""¬""?""¿""œ""�"""""""] | wc -l
 #
-echo 'Expresión regular busca caracteres que NO (^) estén en el rango especificado '
+echo 'Expresión regular busca caracteres que NO (^) estén en el rango standar especificado '
 grep  -n  [^0-9A-Za-z\,_' '-'@''/'] $SALIDA 
-# siguiente línea en cuarentena agregada el 16-09-21, no funciona
-# if [ $?=0 ]; then   echo ATENCION: encontrado errores ;echo pulse una tecla para seguir o Ctrl-c para abortar;read t; fi
 echo =====================
 if [ ! -f ${SALIDA}  -o !  -s ${SALIDA} ]
   then

@@ -15,12 +15,12 @@
 . ~/bin/.bash_aliases
 #. ~/bin/keybsp.sh  # ver alias keybsp
 # Variables de entorno impresindibles
-export SIC=$HOME/SIC                 # Directorio  base
+export SIC=$HOME/SIC/Gestion_Identidad                 # Directorio  base
 if [ "$SICSCRIPTS" == "" ]
 then
-export SICSCRIPTS=$SIC/script_SIC  # Directorio para los script relacionados con mi trabajo
+export SICSCRIPTS=$SIC/BA  # Directorio para los script relacionados con mi trabajo
 fi
-export FUNPROC=$SICSCRIPTS/FUNCYPROC  # Directorio para mis funciones y procedimientos genéricos
+export FUNPROC=$SIC/bin   # Directorio para mis funciones y procedimientos genéricos
 export MISSCRIPTS=$SIC/mis_scripts   # Directorio para mis scripts
 export TMPDIR=$HOME/tmp
 export TmpDir=$HOME/tmp
@@ -29,13 +29,12 @@ export LogDir=$SIC/log
 export LOGFILE=$LOGDIR/bitacora.log
 export BASEPATH=$PATH
 export OLDPATH=$PATH
-export PATH=$PATH:$HOME/bin:$SICSCRIPTS
+export PATH=$PATH:$HOME/bin:$SIC/bin:$SICSCRIPTS
 export XAUTHORITY=$HOME/.Xauthority
 # Variables calculadas
 export VPNstatus=off
 export LLAVE=$(cat ~/.ssh/config | grep "IdentityFile" | cut -d " " -f2)
 #
-#. ~/bin/my_home_IP.sh
 #
 # Aliases y  Variables asociadas a Ordenes
 . $FUNPROC/ordenes.sh      # 
@@ -51,5 +50,4 @@ function lc()
      echo "${1,,*}"
 }
 
-#. $SICSCRIPTS/funciones.sh  # no llamar nunca desde entorno a las funciones hacerlo desde cada uno de los scripts.
 #FIN

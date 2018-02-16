@@ -16,17 +16,13 @@
 #######################################
 #
 #Variables de entorno iniciales
-RUTA=${SICSCRIPTS=/home/sic/SIC/script_SIC}
-export FUNPROC=$SICSCRIPTS/FUNCYPROC
+export RUTA=${HOME}/SIC/Gestion_Identidad/bin
 
 #Variables de entorno generales
-if [ -f  $FUNPROC/entorno.sh ]; then . $FUNPROC/entorno.sh; fi
-## Agregado para perfilar mi entorno
-if [ -f  $FUNPROC/ordenes.sh ]; then . $FUNPROC/ordenes.sh; fi  
-# Incluir Funciones generales para perfilar mis SCRIPTS 
-if [ -f  $FUNPROC/funciones.sh ]; then . $FUNPROC/funciones.sh; fi 
+
+if [ -f  $RUTA/entorno.sh ]; then . $RUTA/entorno.sh; fi
+
 #Entorno específico
-LOGFILE=$LOGDIR/2utf8.log
 FICHEROENTRADA="$1"
 #
 ##############################
@@ -55,10 +51,6 @@ fi
 ################
 file ${FICHEROENTRADA} | grep "UTF-8"  >> $LOGFILE
 if [ $? -gt 0 ] ; then
-#  echo ya tiene codificación UTF-8 >> $LOGFILE
-#  else
-#Convertir a UTF-8 sin BOM
-  # echo  ${FICHEROENTRADA} convertido a UTF-8 
    vi ${FICHEROENTRADA} '+set fenc=utf-8' '+x'
 fi
 # 2º Ver si tiene BOM ?
