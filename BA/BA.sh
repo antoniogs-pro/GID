@@ -36,11 +36,9 @@
 #######################################
 #
 if [ -n "$BASH_ENV" ]; then . "$BASH_ENV" ;fi
-#if [ -n "$BASH_ENV" ]; then . "$BASH_ENV" ; else ( if [ -f  $FUNPROC/entorno.sh ]; then . $FUNPROC/entorno.sh; fi ); fi
 #Variables de entorno iniciales
-RUTA=${SICSCRIPTS=/home/sic/SIC/script_SIC}
-export FUNPROC=$SICSCRIPTS/FUNCYPROC
-
+RUTA=${SICSCRIPTS=/home/sic/SIC/Gestion_Identidad}
+export FUNPROC=$RUTA/bin
 #Variables de entorno generales
 if [ -f  $FUNPROC/entorno.sh ]; then . $FUNPROC/entorno.sh; fi
 ## Agregado para perfilar mi entorno
@@ -130,7 +128,6 @@ FICHEROATRATAR=ficheroatratar.csv
 ##############################
 # PROCESO		     #
 ##############################
-# pendiente de mejorar, con case y tablas
 #
 #colectivos
 declare  Acolectivo=(NINGUNO GRADOS MASTER EXALUMNO PDIEXTERNO ERASMUS UNIVERSIDAD-EXT PAU AACCSS ALUMNOSECUNDARIA PROFESORSECUNDARIA CSIC A6 FIUS PASEUOSUNA EXT IBIS  AulaExperiencia MAES)
@@ -169,7 +166,8 @@ echo ==========================================================
     fi
 
 cuentas_ya_UVUS="noprocesar"
-
+annio=2018
+anniosiguiente=2019
 # Selección 
 case $seleccion in
 "NINGUNO" | "")
@@ -177,20 +175,20 @@ echo “El colectivo es un dato necesario, Abandonando script” ; exit 1
 ;;
 "ALUMNOSECUNDARIA")
 #Año en curso
-fValidez=2017/11/20 # SECUNDARIA
+fValidez=$annio/11/20 # SECUNDARIA
  sed -i  /"TDOC,DOC,ALNOMBRE,ALAPELL1,ALAPELL2,CLAVE"/d ${FICHEROENTRADA}
 colectivo=$seleccion
 RELACION=ALUMNOSECUNDARIA
 ;;
 "PROFESORSECUNDARIA" | "PAU" )
 #Año en curso
-fValidez=2017/11/25 # "PROFESORSECUNDARIA"| "PAU" | "AACCSS" | "MAES" 
+fValidez=$annio/11/25 # "PROFESORSECUNDARIA"| "PAU" | "AACCSS" | "MAES" 
 RELACION=PROFESORSECUNDARIA
 colectivo=$seleccion
 ;;
 "MAES")
 #Año en siguiente
-annio=2018
+annio=2019 # AÑO SIGUIENTE
 fValidez=$annio/09/30  # "PROFESORSECUNDARIA" "MAES" 
 RELACION=PROFESORSECUNDARIA
 colectivo=$seleccion
@@ -198,28 +196,23 @@ colectivo=$seleccion
 ;;
 "AACCSS" | "ADMCS")
 #Año en curso
-fValidez=2017/11/25 # | "AACCSS" | "ADMCS"
+fValidez=$annio/11/25 # | "AACCSS" | "ADMCS"
 RELACION=MISCELANEA
 if  [ "$colectivo" == "AACCSS" ]; then
 colectivo="ADMCS"
 fi
-if  [ "$colectivo" == "ADMCS" ]; then
-echo  Quitando de UVUS eliminados los UVUS de ADM.Sec que se van a crear.
-echo Generando sentencia SQL
-echo 'select * from uids_eliminados where uvus in ( '>sql
-cat ${FICHEROENTRADA} | cut -d, -f2 | while read i; do echo -n "'"$i"'"; echo  "," ; done >> sql
-echo ')'>>sql
-fi
 ;;
 "A6") # A6
-fValidez=2018/03/31 # A6
+annio=2019 # AÑO SIGUIENTE
+fValidez=$annio/03/31 # A6
 RELACION=MISCELANEA
 colectivo=$seleccion
 ;;
 "ERASMUS") # ERASMUS
-annio=2018
-#fValidez=AAAA/03/15 # ERASMUS AAAA año en curso para 2º semestre
-fValidez=$annio/03/15 # ERASMUS AAAA año en curso +1 para 2º semestre
+# AÑO actual/03/15 # ERASMUS AAAA año en curso para 1º semestre
+fValidez=$annio/03/15 
+# AÑO SIGUIENTE PARA MESES DEL SEGUNDO SEMESTRE
+#fValidez=anniosiguiente/03/15 # ERASMUS AAAA año en curso +1 para 2º semestre
 RELACION=ALUMNOSECUNDARIA
 colectivo=$seleccion
 cuentas_ya_UVUS="noprocesar"
@@ -231,26 +224,26 @@ cuentas_ya_UVUS="procesar"
 colectivo=$seleccion
 ;;
 "GRADOS")  # "GRADOS"
-#fValidez=2017/02/20 #  GRADOS
-fValidez=2017/11/30 #  GRADOS
+#fValidez=2019/02/20 #  GRADOS AÑO SIGUIENTE PARA 2º SEMESTRE
+fValidez=$annio/11/30 #  GRADOS
 RELACION=ALUMNOSECUNDARIA
 colectivo=GRADOS
 cuentas_ya_UVUS="noprocesar"
 ;;
 "AulaExperiencia")  # "AulaExperiencia"
-fValidez=2017/11/30 #  AulaExperiencia
+fValidez=$annio/11/30 #  AulaExperiencia
 RELACION=ALUMNOSECUNDARIA
 colectivo=AulaExperiencia
 cuentas_ya_UVUS="noprocesar"
 ;;
 "MASTER")
-fValidez=2018/02/20 # MASTERS
+fValidez=$anniosiguiente/02/20 # MASTERS
 RELACION=ALUMNOSECUNDARIA
 colectivo=MASTER
 cuentas_ya_UVUS="noprocesar"
 ;;
 "EXALUMNO")
-fValidez=2018/11/20 # EXALUMNO
+fValidez=$anniosiguiente/11/20 # EXALUMNO
 colectivo=$seleccion
 ;;
 "PDIEXTERNO") # PDIEXTERNO
@@ -261,13 +254,14 @@ cuentas_ya_UVUS="noprocesar"
 ;;
 "UNIVERSIDAD-EXT")
 fValidez=""   #  viene en fichero de entrada
-fValidez="2020/31/12"
+fValidez="2021/31/12"
 RELACION=MISCELANEA
 colectivo="UNIVERSIDADES"
 cuentas_ya_UVUS="noprocesar"
 ;;
 "CSIC")
-fValidez=2019/09/05 #  CSIC
+annio=2021
+fValidez=$annio/09/05 #  CSIC
 RELACION=MISCELANEA
 colectivo=CSIC
 cuentas_ya_UVUS="noprocesar"
@@ -346,10 +340,6 @@ else
 fi
 export RAMA ARBOL RECURSO
 #
-# Pasos realizados por el siguiente script
-# 1º Convertir a UTF-8 sin BOM,  $RUTA/2utf8.sh ${FICHEROENTRADA}
-# 2º control de retorno de carros linux, $RUTA/2retornoscarro-lf.sh  ${FICHEROENTRADA}
-# 3º Depurando caracteres no válidos en  ${FICHEROENTRADA} genera ${FICHEROATRATAR}
 $FUNPROC/depurar_caracteres_no_imprimibles.sh ${FICHEROENTRADA}
 if [ $? -gt 0 ] ; then
 echo Error $? $error
@@ -417,7 +407,7 @@ echo
 #
 # COMPROBACIONES Y NOTAS FINALES
 #
-echo 'buscando caracteres que NO (^) estén en el rango especificado '
+echo 'buscando caracteres que NO (^) estén en el rango standar no implica error '
 cat ${FICHEROSALIDA}.ba |sed -e 1d  | grep  [^0-9A-Za-z:.,_' ''@''/'\/\|\-] | tee repasar-caracteres-en-BA
 
 ###
@@ -432,7 +422,7 @@ for tndoc in $(cat Excluidos_en_BA_YA_tenian_uvus |cut -d, -f1 )
 do
  sed -i  /"$tndoc"/d ${FICHEROSALIDA}.ba
 done
- cp  ${FICHEROSALIDA}.ba  NO_tenian_uvus.ba
+ cp  ${FICHEROSALIDA}.ba  ALTAS.ba
 cat << :recordar
 
  Antes de lanzar la BA, recordar:
