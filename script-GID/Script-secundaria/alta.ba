@@ -1,0 +1,3 @@
+user,DocumentType,global.dni,global.firstname,global.apellido1,global.apellido2,waveset.roles,password.password,password.confirmPassword,password.selectAll,Sexo,accounts[DirectorioCorporativo\|PAS PDI].fechaValidez,accounts[Lighthouse].fechaValidez,command,accounts[DirectorioCorporativo\|PAS PDI].mailSecundario,accounts[DirectorioCorporativo\|PAS PDI].vinculacion
+D:18006023,D,18006023,GASCON,LANGA,MARIA PILAR,|Merge|PROFESORSECUNDARIA,pA712uS99,pA712uS99,true,NoEspecificado,2016/11/30,2016/11/30,CreateOrUpdate,,PAU
+D:28624355,D,28624355,DELGADO,SEVA,CARLOS,|Merge|PROFESORSECUNDARIA,pA712uS99,pA712uS99,true,NoEspecificado,2016/11/30,2016/11/30,CreateOrUpdate,,PAU

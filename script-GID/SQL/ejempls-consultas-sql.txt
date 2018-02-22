@@ -1,0 +1,18 @@
+Your "cron" job on id1
+/idmScript/check-exalum-bbdd-iam
+
+produced the following output:
+
+getExalumnosBBDDCorp , Entry Method 
+getExalumnosBBDDCorp , querySelect --> SELECT ( tdoc || ':' || ndoc ) AS accountId FROM tb_sevius.DIF_PERFIL_LDAP WHERE Upper(relaciones) like '%EXALUMNO%' ORDER  BY accountId ASC
+getExalumnosBBDDCorp , querySelect launch --> oracle.jdbc.driver.OracleResultSetImpl@139eeda
+getExalumnosBBDDCorp , Select records size 61693
+getAlumnosIAM , Entry Method 
+getAlumnosIAM , querySelect --> SELECT tfrom.name FROM USEROBJ tfrom inner join USERATTR u_rol ON ( u_rol.id = tfrom.id AND u_rol.attrname = 'ROLE' ) inner join ( SELECT id FROM waveset.OBJECT WHERE TYPE = 'Role' AND name = 'ALUMNO' ) findrol ON ( findrol.id = u_rol.attrval ) order by tfrom.name ASC
+getAlumnosIAM , querySelect launch --> oracle.jdbc.driver.OracleResultSetImpl@1ec6696
+getAlumnosIAM , Select records size 69666
+checkUsersMissingIam , Entry Method 
+List Users missing in IAM (size) 4
+checkUsersMissingIam , End Method 
+End CheckUsers , has taken 266230 milliseconds
+
