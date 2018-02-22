@@ -37,7 +37,7 @@
 #
 if [ -n "$BASH_ENV" ]; then . "$BASH_ENV" ;fi
 #Variables de entorno iniciales
-RUTA=${SICSCRIPTS=/home/sic/SIC/Gestion_Identidad}
+RUTA=$HOME/SIC/Gestion_Identidad}
 export FUNPROC=$RUTA/bin
 #Variables de entorno generales
 if [ -f  $FUNPROC/entorno.sh ]; then . $FUNPROC/entorno.sh; fi
