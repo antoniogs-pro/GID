@@ -18,7 +18,7 @@
 export SIC=$HOME/SIC/Gestion_Identidad                 # Directorio  base
 if [ "$SICSCRIPTS" == "" ]
 then
-export SICSCRIPTS=$SIC/BA  # Directorio para los script relacionados con mi trabajo
+export SICSCRIPTS=$SIC/script_SIC  # Directorio para los script relacionados con mi trabajo
 fi
 export FUNPROC=$SIC/bin   # Directorio para mis funciones y procedimientos genéricos
 export MISSCRIPTS=$SIC/mis_scripts   # Directorio para mis scripts

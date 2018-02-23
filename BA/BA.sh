@@ -71,21 +71,18 @@ function lc()
 # COMPROBACIONES DE CONTROL  #
 ##############################
 # verificando VPN
-IFVPN=$(ifconfig | grep "tun" | cut -d " " -f 1)
-if [ "$IFVPN" = "" ]
-then
- echo .·: ----------------------------------:·.
- echo .   Recuerda ARMAR la VPN,               .
- echo ·.: ----------------------------------:.·
-if [ "$DISPLAY" == ":0" ] ; then
-zenity --error --timeout=5 --title="Error - ARMAR LA vpn" --text=" Recuerda ARMAR la VPN,"
-notify-send --urgency=low "Interfaces VPN  $IFVPN  DesActivas"
-exit 255
-fi
-else 
+#IFVPN=$(ifconfig | grep "tun" | cut -d " " -f 1)
+#if [ "$IFVPN" = "" ]
+#then
+# echo .·: ----------------------------------:·.
+# echo .   Recuerda ARMAR la VPN,               .
+# echo ·.: ----------------------------------:.·
+#exit 255
+#fi
+#else 
 # echo Interfaces VPN  $IFVPN  Activas
-echo
-fi
+#echo
+#fi
 #
 #echo Ejecutando $0 sobre $1
 #
@@ -94,10 +91,12 @@ fi
 if [ "${FICHEROENTRADA}" == "" ]
 then
 cat >&2 << :ayuda
+
 	 ATENCIÓN: 
 	 Debe especificar el nombre del FICHERO de ENTRADA tipo texto (CSV)  a procesar.
 	 sintaxis:
-	 $0 nombre_FICHERO
+	 $0 nombre_FICHERO [-p] 
+
 :ayuda
 exit 255
 fi
@@ -410,7 +409,7 @@ exit 253
 fi
 #
 
-perl $RUTA/genera-bulkaction.pl   -c $colectivo  $FECHA $PRE > ${FICHEROSALIDA}${PRE}.ba
+perl $SICSCRIPTS/genera-bulkaction.pl   -c $colectivo  $FECHA $PRE > ${FICHEROSALIDA}${PRE}.ba
 echo
 echo Se ha generado $PWD/${FICHEROSALIDA}${PRE}.ba
 echo
@@ -423,7 +422,7 @@ cat ${FICHEROSALIDA}.ba |sed -e 1d  | grep  [^0-9A-Za-z:.,_' ''@''/'\/\|\-] | te
 ###
 
 echo Listado de usuarios eliminados de la BA porque ya tenian UVUS para $colectivo
-cat ${FICHEROSALIDA}.ba |sed -e 1d | cut -d, -f 1 | bash $RUTA/LDAP_obtener_UVUS_desde_tndoc.sh ${FICHEROSALIDA}.ba |  grep -v ",$" > Excluidos_en_BA_YA_tenian_uvus
+cat ${FICHEROSALIDA}.ba |sed -e 1d | cut -d, -f 1 | bash $SICSCRIPTS/LDAP_obtener_UVUS_desde_tndoc.sh ${FICHEROSALIDA}.ba |  grep -v ",$" > Excluidos_en_BA_YA_tenian_uvus
 cat  Excluidos_en_BA_YA_tenian_uvus | grep $RELACION > Excluidos_en_BA_YA_tenian_$RELACION
 ###
 #
@@ -464,7 +463,7 @@ cat << :recordar
 fi
 ##
 if  [ "$colectivo" == "A6" -o  "$colectivo" == "CSIC"  ]; then  # para colectivos con prefijo en NDOC
-echo "cat ${FICHEROALTA}.ba |sed -e 1d | cut -d, -f 1  | bash $RUTA/LDAP_obtener_UVUS_decolectivo.sh $colectivo  | tee ${FICHEROSALIDA}+UVUS.csv" > obtener-UVUS_$colectivo.sh
+echo "cat ${FICHEROALTA}.ba |sed -e 1d | cut -d, -f 1  | bash $SICSCRIPTS/LDAP_obtener_UVUS_decolectivo.sh $colectivo  | tee ${FICHEROSALIDA}+UVUS.csv" > obtener-UVUS_$colectivo.sh
 cat << :recordar
         - para obtener los UVUS ejecutar despues el script: 
      bash ./obtener-UVUS_${colectivo}.sh"
@@ -474,7 +473,7 @@ cat << :recordar
 fi
 ##
 if  [ "$colectivo" == "GRADOS" -o "$colectivo" == "MASTER" -o "$colectivo" == "ERASMUS" ]; then
-echo "cat ${FICHEROALTA}.ba |sed -e 1d | cut -d, -f 1 | bash $RUTA/LDAP_obtener_UVUS_desde_tndoc.sh  | tee ${FICHEROSALIDA}+UVUS.csv " > obtener-UVUS_$colectivo.sh 
+echo "cat ${FICHEROALTA}.ba |sed -e 1d | cut -d, -f 1 | bash $SICSCRIPTS/LDAP_obtener_UVUS_desde_tndoc.sh  | tee ${FICHEROSALIDA}+UVUS.csv " > obtener-UVUS_$colectivo.sh 
 cat << :recordar
         - para obtener los UVUS ejecutar despues: 
      bash ./obtener-UVUS_${colectivo}.sh"
@@ -482,10 +481,10 @@ cat << :recordar
 fi
 ##  OJO especiales
 if  [ "$colectivo" == "MISCELANEA" ]; then   
-echo "cat ${FICHEROSALIDA}.ba |sed -e 1d | cut -d, -f 1 | bash $RUTA/LDAP_obtener_UVUS_desde_tndoc.sh | tee ${FICHEROSALIDA}+UVUS.csv" > obtener-UVUS_$colectivo.sh 
+echo "cat ${FICHEROSALIDA}.ba |sed -e 1d | cut -d, -f 1 | bash $SICSCRIPTS/LDAP_obtener_UVUS_desde_tndoc.sh | tee ${FICHEROSALIDA}+UVUS.csv" > obtener-UVUS_$colectivo.sh 
 cat << :recordar
         - para obtener los UVUS ejecutar despues: 
-  cat ${FICHEROSALIDA}.ba |sed -e 1d | cut -d, -f 1 | bash $RUTA/LDAP_obtener_UVUS_desde_tndoc.sh | tee ${FICHEROSALIDA}+UVUS.csv
+  cat ${FICHEROSALIDA}.ba |sed -e 1d | cut -d, -f 1 | bash $SICSCRIPTS/LDAP_obtener_UVUS_desde_tndoc.sh | tee ${FICHEROSALIDA}+UVUS.csv
 :recordar
 fi
 
@@ -493,7 +492,7 @@ if  [ "$colectivo" == "PDIEXTERNO" ]; then
 echo "command,user,waveset.roles,accounts[DirectorioCorporativo\|PAS PDI].fechaValidez,accounts[Lighthouse].fechaValidez,accounts[DirectorioCorporativo\|PAS PDI].vinculacion,accounts[DirectorioCorporativo\|PAS PDI].mailSecundario" > agregarrelacion.ba
 awk -v OFS="," -F"," '{print  "Update",toupper($1)":"$2,"|Merge|'${RELACION}'",$6,$6,$7,$8;}' agregarrelacion.csv >> agregarrelacion.ba
 echo        - para obtener los UVUS ejecutar despues: 
-echo "cat ${FICHEROSALIDA}.ba |sed -e 1d | cut -d, -f 1 | bash $RUTA/LDAP_obtener_UVUS_desde_tndoc.sh| sed s/" "/_/g | tee ${FICHEROSALIDA}+UVUS.csv" > obtener-UVUS_$colectivo.sh 
+echo "cat ${FICHEROSALIDA}.ba |sed -e 1d | cut -d, -f 1 | bash $SICSCRIPTS/LDAP_obtener_UVUS_desde_tndoc.sh| sed s/" "/_/g | tee ${FICHEROSALIDA}+UVUS.csv" > obtener-UVUS_$colectivo.sh 
 echo Para obtener los UVUS ejecute el script -    "bash" './' "obtener-UVUS_$colectivo.sh"
 echo "cat agregarrelacion.ba |sed -e 1d | cut -d, -f 1 | while read BDOC; do perl /home/sic/SIC/script_SIC/extrae.pl -b o=us.es,dc=us,dc=es -s , -nodn  -f schacPersonalUniqueID=urn:mace:terena.org:schac:personalUniqueID:es:$BDOC -a schacpersonaluniqueid -a givenname -a sn1 -a sn2 -a uid -a UsEsRelacion  | sed -e s/urn:mace:terena.org:schac:personalUniqueID:es://g | sed -e s/urn:mace:terena.org:schac:userStatus:us.es://g | sed s/" "/_/g  >> agregarrelacion+UVUS.csv; done" >> obtener-UVUS_$colectivo.sh 
 fi
@@ -502,7 +501,7 @@ if  [ "$colectivo" == "PAU" -o "$colectivo" == "AACCSS"  -o "$colectivo" == "MAE
 echo "Command,User,waveset.roles,accounts[DirectorioCorporativo\|PAS PDI].fechaValidez,accounts[Lighthouse].fechaValidez,accounts[DirectorioCorporativo\|PAS PDI].vinculacion" > {FICHEROAGREGARELACION}.ba
 awk -v OFS="," -F"," '{print  "Update",toupper($1)":"$2,"|Merge|PROFESORSECUNDARIA",$8,$8,colectivo;}' agregarrelacion.csv >> agregarrelacion.ba
 echo        - para obtener los UVUS ejecutar despues: 
-echo "cat ${FICHEROALTA}.ba |sed -e 1d | cut -d, -f 1 | bash $RUTA/LDAP_obtener_UVUS_desde_tndoc.sh| sed s/" "/_/g | tee ${FICHEROSALIDA}+UVUS.csv" > obtener-UVUS_$colectivo.sh 
+echo "cat ${FICHEROALTA}.ba |sed -e 1d | cut -d, -f 1 | bash $SICSCRIPTS/LDAP_obtener_UVUS_desde_tndoc.sh| sed s/" "/_/g | tee ${FICHEROSALIDA}+UVUS.csv" > obtener-UVUS_$colectivo.sh 
 echo Para obtener los UVUS ejecute el script -    "bash" './' "obtener-UVUS_$colectivo.sh"
 fi
 #
