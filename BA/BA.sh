@@ -49,6 +49,12 @@ if [ -f  $FUNPROC/funciones.sh ]; then . $FUNPROC/funciones.sh; fi
 LOGFILE=$LOGDIR/BA.log
 unset FICHEROENTRADA
 FICHEROENTRADA="$1"
+shift
+PRE=""
+if [ "$1" == "-p" -o "$1" == "-P" ]; then
+  PRE="-pre"
+  EXTRAE=extrae-maqueta.pl
+fi
 ### Funciones de entorno
 function uc()
 {
@@ -166,8 +172,10 @@ echo ==========================================================
     fi
 
 cuentas_ya_UVUS="noprocesar"
-annio=2018
-anniosiguiente=2019
+#año actual
+annio=$(date +"%Y")
+#Año en siguiente
+anniosiguiente=$(( $annio+1))
 # Selección 
 case $seleccion in
 "NINGUNO" | "")
@@ -187,8 +195,7 @@ RELACION=PROFESORSECUNDARIA
 colectivo=$seleccion
 ;;
 "MAES")
-#Año en siguiente
-annio=2019 # AÑO SIGUIENTE
+annio=$anniosiguiente # AÑO SIGUIENTE
 fValidez=$annio/09/30  # "PROFESORSECUNDARIA" "MAES" 
 RELACION=PROFESORSECUNDARIA
 colectivo=$seleccion
@@ -203,14 +210,14 @@ colectivo="ADMCS"
 fi
 ;;
 "A6") # A6
-annio=2019 # AÑO SIGUIENTE
+annio=$anniosiguiente # AÑO SIGUIENTE
 fValidez=$annio/03/31 # A6
 RELACION=MISCELANEA
 colectivo=$seleccion
 ;;
 "ERASMUS") # ERASMUS
 # AÑO actual/03/15 # ERASMUS AAAA año en curso para 1º semestre
-fValidez=$annio/03/15 
+ fValidez=$annio/11/30 
 # AÑO SIGUIENTE PARA MESES DEL SEGUNDO SEMESTRE
 #fValidez=anniosiguiente/03/15 # ERASMUS AAAA año en curso +1 para 2º semestre
 RELACION=ALUMNOSECUNDARIA
@@ -224,8 +231,9 @@ cuentas_ya_UVUS="procesar"
 colectivo=$seleccion
 ;;
 "GRADOS")  # "GRADOS"
-#fValidez=2019/02/20 #  GRADOS AÑO SIGUIENTE PARA 2º SEMESTRE
-fValidez=$annio/11/30 #  GRADOS
+#annio=$anniosiguiente # AÑO SIGUIENTE
+#fValidez=$annio/02/20 #  GRADOS AÑO SIGUIENTE PARA 2º SEMESTRE
+fValidez=$annio/11/30 #  GRADOS  AÑO ACTUAL PARA 1º SEMESTRE
 RELACION=ALUMNOSECUNDARIA
 colectivo=GRADOS
 cuentas_ya_UVUS="noprocesar"
@@ -237,13 +245,15 @@ colectivo=AulaExperiencia
 cuentas_ya_UVUS="noprocesar"
 ;;
 "MASTER")
-fValidez=$anniosiguiente/02/20 # MASTERS
+annio=$anniosiguiente # AÑO SIGUIENTE
+fValidez=$annio/02/20 # MASTERS
 RELACION=ALUMNOSECUNDARIA
 colectivo=MASTER
 cuentas_ya_UVUS="noprocesar"
 ;;
 "EXALUMNO")
-fValidez=$anniosiguiente/11/20 # EXALUMNO
+annio=$anniosiguiente # AÑO SIGUIENTE
+fValidez=$annio/11/20 # EXALUMNO
 colectivo=$seleccion
 ;;
 "PDIEXTERNO") # PDIEXTERNO
@@ -332,7 +342,7 @@ if [ "$RAMA" = "pas" ]
    fi
  fi
 RECURSO="accounts[DirectorioCorporativo\\|$RAMALDAP]"
-if [ "$4" = "pre" ]
+if [ "$PRE" = "-pre" ]
 then
 	RECURSO="accounts[MaquetaDirectorio\\|$RAMALDAP]"
 else
@@ -354,10 +364,10 @@ cat << :error
 exit 253
 fi
 #
-# eliminando cuentas que ya tienen UVUS por otra relación cuando proceda
+# eliminando cuentas que ya tienen UVUS por otra relación cuando proceda ya NO  es alta
 echo Buscando cuentas que ya poseen otra relación con La US en cualquier rama 
 # entrecomillo $USR por si el documento viene con espacios en blanco
-cat ${FICHEROATRATAR} | cut -d, -f 1,2| tr "," ":"| while read USR ; do  perl $EXTRAE -s "," -f "schacPersonalUniqueID=urn:mace:terena.org:schac:personalUniqueID:es:${USR}" -nodn -a schacpersonaluniqueid -a givenname -a sn1 -a sn2 -a uid -a UsEsRelacion -a ou | sed -e s/urn:mace:terena.org:schac:personalUniqueID:es://g | sed -e s/urn:mace:terena.org:schac:userStatus:us.es://g; done | tee YA_tenian_uvus_otra_relacion.ldap | wc -l
+cat ${FICHEROATRATAR} | cut -d, -f 1,2| tr "," ":"| while read USR ; do  perl $EXTRAE  -f "schacPersonalUniqueID=urn:mace:terena.org:schac:personalUniqueID:es:${USR}" -nodn -a schacpersonaluniqueid -a givenname -a sn1 -a sn2 -a uid -a UsEsRelacion -a ou -a iplanet-am-user-account-life | sed -e s/urn:mace:terena.org:schac:personalUniqueID:es://g | sed -e s/urn:mace:terena.org:schac:userStatus:us.es://g; done | tee YA_tenian_uvus_otra_relacion.ldap | wc -l
 #
 > encontrados-en-LDAP.csv
 if [ $cuentas_ya_UVUS == "noprocesar" ] ; then
@@ -400,9 +410,9 @@ exit 253
 fi
 #
 
-perl $RUTA/genera-bulkaction.pl   -c $colectivo  $FECHA > ${FICHEROSALIDA}.ba
+perl $RUTA/genera-bulkaction.pl   -c $colectivo  $FECHA $PRE > ${FICHEROSALIDA}${PRE}.ba
 echo
-echo Se ha generado $PWD/${FICHEROSALIDA}.ba 
+echo Se ha generado $PWD/${FICHEROSALIDA}${PRE}.ba
 echo
 #
 # COMPROBACIONES Y NOTAS FINALES
@@ -422,89 +432,56 @@ for tndoc in $(cat Excluidos_en_BA_YA_tenian_uvus |cut -d, -f1 )
 do
  sed -i  /"$tndoc"/d ${FICHEROSALIDA}.ba
 done
- cp  ${FICHEROSALIDA}.ba  ALTAS.ba
+# Inicializar ficheros
+FICHEROALTA=alta-nuevos-${colectivo}
+FICHEROAGREGARELACION=agregar-relacion-${colectivo}
+FICHEROACTUFECHA=actu-fecha-${colectivo}
+>D-cambiaran_de_UVUS.txt
+>${FICHEROALTA}.csv
+>${FICHEROAGREGARELACION}.csv
+>${FICHEROACTUFECHA}.csv
+# cabeceras BA
+echo "Command,User,accounts[Lighthouse].fechaValidez,$RECURSO.fechaValidez,waveset.roles,accounts[DirectorioCorporativo\|PAS PDI].vinculacion" >$
+echo "Command,User,accounts[Lighthouse].fechaValidez,$RECURSO.fechaValidez" > actualizar-fecha-$colectivo.ba   # ,waveset.roles
+
+
+ cp  ${FICHEROSALIDA}.ba  ${FICHEROALTA}.ba
 cat << :recordar
 
  Antes de lanzar la BA, recordar:
-	- hojear ${FICHEROSALIDA}.ba para ver si hay caracteres raros y ver si cumple el formato esperado.
+	- hojear ${FICHEROALTA}.ba para ver si hay caracteres raros y ver si cumple el formato esperado.
         - No olvide comprobar mayúsculas los campos nombre,ape1,ape2
 	- probar primero con el primer usuario, si todo va bien el resto
 	- Seleccionar en acción: de lista de acciones
-	-  == OJO ==  aumentar a $(cat ${FICHEROSALIDA}.ba | wc -l ) el Máximo de resultados por página
+	-  == OJO ==  aumentar a $(cat ${FICHEROALTA}.ba | wc -l ) el Máximo de resultados por página
 :recordar
 ##
-
-
 ##
-if  [ "$colectivo" == "PAU" ]; then
-echo "Command,User,waveset.roles,accounts[DirectorioCorporativo\|PAS PDI].fechaValidez,accounts[Lighthouse].fechaValidez,accounts[DirectorioCorporativo\|PAS PDI].vinculacion" > agregarrelacion.ba
-awk -v OFS="," -F"," '{print  "Update",toupper($1)":"$2,"|Merge|PROFESORSECUNDARIA",$8,$8,"MAES";}' agregarrelacion.csv >> agregarrelacion.ba
-echo        - para obtener los UVUS ejecutar despues: 
-echo "cat ${FICHEROSALIDA}.ba |sed -e 1d | cut -d, -f 1 | bash $RUTA/LDAP_obtener_UVUS_desde_tndoc.sh| sed s/" "/_/g | tee ${FICHEROSALIDA}+UVUS.csv" > obtener-UVUS_$colectivo.sh 
-
-#echo "cat agregarrelacion.ba |sed -e 1d | cut -d, -f 1 | while read BDOC; do perl /home/sic/SIC/script_SIC/extrae.pl -b o=us.es,dc=us,dc=es -s , -nodn  -f schacPersonalUniqueID=urn:mace:terena.org:schac:personalUniqueID:es:$BDOC -a schacpersonaluniqueid -a givenname -a sn1 -a sn2 -a uid -a UsEsRelacion  | sed -e s/urn:mace:terena.org:schac:personalUniqueID:es://g | sed -e s/urn:mace:terena.org:schac:userStatus:us.es://g | sed s/" "/_/g  >> agregarrelacion+UVUS.csv; done" >> obtener-UVUS_$colectivo.sh 
-echo Para obtener los UVUS ejecute el script -    "bash" './' "obtener-UVUS_$colectivo.sh"
-fi
-#
-if  [ "$colectivo" == "PDIEXTERNO" ]; then
-echo "command,user,waveset.roles,accounts[DirectorioCorporativo\|PAS PDI].fechaValidez,accounts[Lighthouse].fechaValidez,accounts[DirectorioCorporativo\|PAS PDI].vinculacion,accounts[DirectorioCorporativo\|PAS PDI].mailSecundario" > agregarrelacion.ba
-awk -v OFS="," -F"," '{print  "Update",toupper($1)":"$2,"|Merge|'${RELACION}'",$6,$6,$7,$8;}' agregarrelacion.csv >> agregarrelacion.ba
-echo        - para obtener los UVUS ejecutar despues: 
-echo "cat ${FICHEROSALIDA}.ba |sed -e 1d | cut -d, -f 1 | bash $RUTA/LDAP_obtener_UVUS_desde_tndoc.sh| sed s/" "/_/g | tee ${FICHEROSALIDA}+UVUS.csv" > obtener-UVUS_$colectivo.sh 
-
-echo "cat agregarrelacion.ba |sed -e 1d | cut -d, -f 1 | while read BDOC; do perl /home/sic/SIC/script_SIC/extrae.pl -b o=us.es,dc=us,dc=es -s , -nodn  -f schacPersonalUniqueID=urn:mace:terena.org:schac:personalUniqueID:es:$BDOC -a schacpersonaluniqueid -a givenname -a sn1 -a sn2 -a uid -a UsEsRelacion  | sed -e s/urn:mace:terena.org:schac:personalUniqueID:es://g | sed -e s/urn:mace:terena.org:schac:userStatus:us.es://g | sed s/" "/_/g  >> agregarrelacion+UVUS.csv; done" >> obtener-UVUS_$colectivo.sh 
-echo Para obtener los UVUS ejecute el script -    "bash" './' "obtener-UVUS_$colectivo.sh"
-fi
-##
-if  [ "$colectivo" == "IBIS" ]; then
+if  [ "$colectivo" == "IBIS" -o "$colectivo" == "EXT"  -o "$colectivo" == "FIUS" ]; then
 cat << :recordar
    Los UVUS están integrados en la petición, no hay que obtenerlos
+:recordar
+fi
+##
+if  [ "$colectivo" == "A6" -o  "$colectivo" == "CSIC"  ]; then  # para colectivos con prefijo en NDOC
+echo "cat ${FICHEROALTA}.ba |sed -e 1d | cut -d, -f 1  | bash $RUTA/LDAP_obtener_UVUS_decolectivo.sh $colectivo  | tee ${FICHEROSALIDA}+UVUS.csv" > obtener-UVUS_$colectivo.sh
+cat << :recordar
+        - para obtener los UVUS ejecutar despues el script: 
+     bash ./obtener-UVUS_${colectivo}.sh"
 
 :recordar
+#echo Para obtener los UVUS ejecute el script -    "bash" './' "obtener-UVUS_$colectivo.sh"
 fi
-if  [ "$colectivo" == "FIUS" ]; then  # para colectivos con prefijo en NDOC
-cat << :recordar
- Los UVUS están integrados en la petición, no hay que obtenerlos
-:recordar
-fi
-if  [ "$colectivo" == "EXT" ]; then  # para colectivos con prefijo en NDOC
-cat << :recordar
- Los UVUS están integrados en la petición, no hay que obtenerlos
-:recordar
-fi
-if  [ "$colectivo" == "A6" ]; then  # para colectivos con prefijo en NDOC
-echo "cat ${FICHEROSALIDA}.ba |sed -e 1d | cut -d, -f 1  | bash $RUTA/LDAP_obtener_UVUS_decolectivo.sh $colectivo  | tee ${FICHEROSALIDA}+UVUS.csv" > obtener-UVUS_$colectivo.sh
+##
+if  [ "$colectivo" == "GRADOS" -o "$colectivo" == "MASTER" -o "$colectivo" == "ERASMUS" ]; then
+echo "cat ${FICHEROALTA}.ba |sed -e 1d | cut -d, -f 1 | bash $RUTA/LDAP_obtener_UVUS_desde_tndoc.sh  | tee ${FICHEROSALIDA}+UVUS.csv " > obtener-UVUS_$colectivo.sh 
 cat << :recordar
         - para obtener los UVUS ejecutar despues: 
-    cat ${FICHEROSALIDA}.ba |sed -e 1d | cut -d, -f 1  | bash $RUTA/LDAP_obtener_UVUS_decolectivo.sh $colectivo  | tee ${FICHEROSALIDA}+UVUS.csv
+     bash ./obtener-UVUS_${colectivo}.sh"
 :recordar
 fi
-if  [ "$colectivo" == "GRADOS" ]; then
-echo "cat ${FICHEROSALIDA}.ba |sed -e 1d | cut -d, -f 1 | bash $RUTA/LDAP_obtener_UVUS_desde_tndoc.sh  | tee ${FICHEROSALIDA}+UVUS.csv " > obtener-UVUS_$colectivo.sh 
-cat << :recordar
-        - para obtener los UVUS ejecutar despues: 
- cat ${FICHEROSALIDA}.ba |sed -e 1d | cut -d, -f 1 | bash $RUTA/LDAP_obtener_UVUS_desde_tndoc.sh  | tee ${FICHEROSALIDA}+UVUS.csv
-:recordar
-fi
-if  [ "$colectivo" == "MASTER" ]; then
-echo "cat ${FICHEROSALIDA}.ba |sed -e 1d | cut -d, -f 1 | bash $RUTA/LDAP_obtener_UVUS_desde_tndoc.sh  | tee ${FICHEROSALIDA}+UVUS.csv " > obtener-UVUS_$colectivo.sh 
-cat << :recordar
-        - para obtener los UVUS ejecutar despues: 
- cat ${FICHEROSALIDA}.ba |sed -e 1d | cut -d, -f 1 | bash $RUTA/LDAP_obtener_UVUS_desde_tndoc.sh  | tee ${FICHEROSALIDA}+UVUS.csv
-:recordar
-fi
-if  [ "$colectivo" == "ERASMUS" ]; then
-echo "cat ${FICHEROSALIDA}.ba |sed -e 1d | cut -d, -f 1 | bash $RUTA/LDAP_obtener_UVUS_desde_tndoc.sh  | tee ${FICHEROSALIDA}+UVUS.csv" > obtener-UVUS_$colectivo.sh 
-cat << :recordar
-        - para obtener los UVUS ejecutar despues: 
- cat ${FICHEROSALIDA}.ba |sed -e 1d | cut -d, -f 1 | bash $RUTA/LDAP_obtener_UVUS_desde_tndoc.sh  | tee ${FICHEROSALIDA}+UVUS.csv
-:recordar
-fi
-
-
-
-
-if  [ "$colectivo" == "MISCELANEA" ]; then   # "ADMCS"
+##  OJO especiales
+if  [ "$colectivo" == "MISCELANEA" ]; then   
 echo "cat ${FICHEROSALIDA}.ba |sed -e 1d | cut -d, -f 1 | bash $RUTA/LDAP_obtener_UVUS_desde_tndoc.sh | tee ${FICHEROSALIDA}+UVUS.csv" > obtener-UVUS_$colectivo.sh 
 cat << :recordar
         - para obtener los UVUS ejecutar despues: 
@@ -512,12 +489,21 @@ cat << :recordar
 :recordar
 fi
 
-if  [ "$colectivo" == "CSIC" ]; then
-echo "cat ${FICHEROSALIDA}.ba |sed -e 1d | cut -d, -f 1  | bash $RUTA/LDAP_obtener_UVUS_decolectivo.sh $colectivo  | tee ${FICHEROSALIDA}+UVUS.csv" > obtener-UVUS_$colectivo.sh
-cat << :recordar
-        - para obtener los UVUS ejecutar despues: 
-    
-    cat ${FICHEROSALIDA}.ba |sed -e 1d | cut -d, -f 1  | bash $RUTA/LDAP_obtener_UVUS_decolectivo.sh $colectivo  | tee ${FICHEROSALIDA}+UVUS.csv
-:recordar
+if  [ "$colectivo" == "PDIEXTERNO" ]; then
+echo "command,user,waveset.roles,accounts[DirectorioCorporativo\|PAS PDI].fechaValidez,accounts[Lighthouse].fechaValidez,accounts[DirectorioCorporativo\|PAS PDI].vinculacion,accounts[DirectorioCorporativo\|PAS PDI].mailSecundario" > agregarrelacion.ba
+awk -v OFS="," -F"," '{print  "Update",toupper($1)":"$2,"|Merge|'${RELACION}'",$6,$6,$7,$8;}' agregarrelacion.csv >> agregarrelacion.ba
+echo        - para obtener los UVUS ejecutar despues: 
+echo "cat ${FICHEROSALIDA}.ba |sed -e 1d | cut -d, -f 1 | bash $RUTA/LDAP_obtener_UVUS_desde_tndoc.sh| sed s/" "/_/g | tee ${FICHEROSALIDA}+UVUS.csv" > obtener-UVUS_$colectivo.sh 
+echo Para obtener los UVUS ejecute el script -    "bash" './' "obtener-UVUS_$colectivo.sh"
+echo "cat agregarrelacion.ba |sed -e 1d | cut -d, -f 1 | while read BDOC; do perl /home/sic/SIC/script_SIC/extrae.pl -b o=us.es,dc=us,dc=es -s , -nodn  -f schacPersonalUniqueID=urn:mace:terena.org:schac:personalUniqueID:es:$BDOC -a schacpersonaluniqueid -a givenname -a sn1 -a sn2 -a uid -a UsEsRelacion  | sed -e s/urn:mace:terena.org:schac:personalUniqueID:es://g | sed -e s/urn:mace:terena.org:schac:userStatus:us.es://g | sed s/" "/_/g  >> agregarrelacion+UVUS.csv; done" >> obtener-UVUS_$colectivo.sh 
 fi
+#
+if  [ "$colectivo" == "PAU" -o "$colectivo" == "AACCSS"  -o "$colectivo" == "MAES"]; then
+echo "Command,User,waveset.roles,accounts[DirectorioCorporativo\|PAS PDI].fechaValidez,accounts[Lighthouse].fechaValidez,accounts[DirectorioCorporativo\|PAS PDI].vinculacion" > {FICHEROAGREGARELACION}.ba
+awk -v OFS="," -F"," '{print  "Update",toupper($1)":"$2,"|Merge|PROFESORSECUNDARIA",$8,$8,colectivo;}' agregarrelacion.csv >> agregarrelacion.ba
+echo        - para obtener los UVUS ejecutar despues: 
+echo "cat ${FICHEROALTA}.ba |sed -e 1d | cut -d, -f 1 | bash $RUTA/LDAP_obtener_UVUS_desde_tndoc.sh| sed s/" "/_/g | tee ${FICHEROSALIDA}+UVUS.csv" > obtener-UVUS_$colectivo.sh 
+echo Para obtener los UVUS ejecute el script -    "bash" './' "obtener-UVUS_$colectivo.sh"
+fi
+#
 # fin
